@@ -8,9 +8,11 @@ from itertools import repeat
 vk_session = VkApi(token=VK_TOKEN)
 vk = vk_session.get_api()
 
+
 def get_group_screen_name_by_id(id):
     response = vk.groups.getById(group_id=id)
     return response[0]['screen_name']
+
 
 def get_link(item):
     """
@@ -29,6 +31,7 @@ def get_link(item):
 
     return link
 
+
 def process_mention(item):
     """
     Process single mention item
@@ -43,6 +46,7 @@ def process_mention(item):
     result['mentioned_by'] = item['from_id']
 
     return result
+
 
 def get_mentions(user_id, max_mentions):
     """
@@ -74,7 +78,8 @@ def get_mentions(user_id, max_mentions):
     ids = repeat(user_id)
 
     for i in range(n_iters):
-        answer = vk.newsfeed.getMentions(owner_id=user_id, count=50, offset = i * 50)
+        answer = vk.newsfeed.getMentions(
+            owner_id=user_id, count=50, offset=i * 50)
 
         answer = map(process_mention, answer['items'])
         answer = filter(lambda x: x is not None, answer)
@@ -85,12 +90,14 @@ def get_mentions(user_id, max_mentions):
 
     return result
 
+
 def get_link_wall_post(item):
     if 'owner_id' not in item:
         print(item)
 
     id = str(item['owner_id'])
     return 'https://vk.com/id{}?w=wall{}_{}'.format(id, id, str(item['id']))
+
 
 def process_post(item):
     """
@@ -104,6 +111,7 @@ def process_post(item):
     result['link'] = get_link_wall_post(item)
 
     return result
+
 
 def get_posts(owner_id, max_posts):
     """
@@ -133,11 +141,66 @@ def get_posts(owner_id, max_posts):
     result = list()
 
     for i in range(n_iters):
-        answer = vk.wall.get(owner_id=owner_id, count=100, offset=100*i, filter='owner')
+        answer = vk.wall.get(owner_id=owner_id, count=100,
+                             offset=100*i, filter='owner')
         answer = answer['items']
         answer = map(process_post, answer)
         result += list(answer)
 
-    return result 
+    return result
 
 
+def process_photo(item):
+    """
+    Process single instance of photo item
+    """
+
+    result = dict()
+
+    result['user'] = item['owner_id']
+    result['date'] = item['date']
+
+    max_photo = None
+    max_photo_width = 0
+
+    for photo in item['sizes']:
+        if photo['width'] > max_photo_width:
+            max_photo_width = photo['width']
+            max_photo = photo
+
+    result['link'] = max_photo['url']
+
+    return result
+
+
+def get_photos(owner_id, max_photos):
+    """
+    Pull links to photos posted by user
+
+    Arguments:
+    ----------
+    owner_id: int
+        User to pull images for
+
+    max_photos: int
+        Maximal number of images to pull links for
+
+    Returns:
+    --------
+    list[dict] -- requested information about photos. More specifically, each dict contains:
+        'link' -- link to photo
+        'user' -- link to user 
+        'date' -- date of publication in Unixcode format
+    """
+    answer = vk.photos.getAll(owner_id=owner_id)
+    max_photos = min(max_photos, answer['count'])
+    n_iters = (max_photos + 199) // 200
+
+    result = list()
+
+    for i in range(n_iters):
+        answer = vk.photos.getAll(owner_id=owner_id, count=200, offset=200 * i)
+        answer = map(process_photo, answer['items'])
+        result += list(answer)
+
+    return result
