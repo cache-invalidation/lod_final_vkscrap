@@ -78,6 +78,7 @@ def get_mentions(user_id, max_mentions):
     ids = repeat(user_id)
 
     for i in range(n_iters):
+        count = cur_count = min(50, max_mentions - 50 * i)
         answer = vk.newsfeed.getMentions(
             owner_id=user_id, count=50, offset=i * 50)
 
@@ -141,7 +142,8 @@ def get_posts(owner_id, max_posts):
     result = list()
 
     for i in range(n_iters):
-        answer = vk.wall.get(owner_id=owner_id, count=100,
+        cur_count = min(100, max_posts - 100 * i)
+        answer = vk.wall.get(owner_id=owner_id, count=cur_count,
                              offset=100*i, filter='owner')
         answer = answer['items']
         answer = map(process_post, answer)
@@ -199,8 +201,33 @@ def get_photos(owner_id, max_photos):
     result = list()
 
     for i in range(n_iters):
-        answer = vk.photos.getAll(owner_id=owner_id, count=200, offset=200 * i)
+        cur_count = min(200, max_photos - 200 * i)
+        answer = vk.photos.getAll(
+            owner_id=owner_id, count=cur_count, offset=200 * i)
         answer = map(process_photo, answer['items'])
         result += list(answer)
 
     return result
+
+
+def do_magic(user_id):
+    """
+    Quick and dirty function that gets at most 200 of each 
+
+    Arguments:
+    ----------
+    user_id: int
+        VK ID of user to pull data for
+
+    Returns:
+    --------
+        dict with results
+            'photos' -- array of dicts describing pictures
+            'posts' -- array of dicts describing posts
+            'mentions' -- array of dicts describing mentions by other users
+    """
+    photos = get_photos(user_id, 50)
+    posts = get_posts(user_id, 50)
+    mentions = get_mentions(user_id, 50)
+
+    return {'photos': photos, 'posts': posts, 'mentions': mentions}
