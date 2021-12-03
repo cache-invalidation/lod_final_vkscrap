@@ -86,10 +86,10 @@ def get_mentions(user_id, max_mentions):
     return result
 
 def get_link_wall_post(item):
-    if 'id' not in item:
+    if 'owner_id' not in item:
         print(item)
 
-    id = str(item['user'])
+    id = str(item['owner_id'])
     return 'https://vk.com/id{}?w=wall{}_{}'.format(id, id, str(item['id']))
 
 def process_post(item):
@@ -101,7 +101,7 @@ def process_post(item):
     result['date'] = item['date']
     result['user'] = item['from_id']
     result['text'] = item['text']
-    result['link'] = get_link_wall_post(result)
+    result['link'] = get_link_wall_post(item)
 
     return result
 
@@ -134,11 +134,9 @@ def get_posts(owner_id, max_posts):
 
     for i in range(n_iters):
         answer = vk.wall.get(owner_id=owner_id, count=100, offset=100*i, filter='owner')
-        print(answer['items'][0])
-        answer2 = answer['items']
-        answer2 = map(process_post, answer2)
-        result += list(answer2)
-        sleep(10)
+        answer = answer['items']
+        answer = map(process_post, answer)
+        result += list(answer)
 
     return result 
 
