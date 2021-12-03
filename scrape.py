@@ -210,7 +210,7 @@ def get_photos(owner_id, max_photos):
     return result
 
 
-def do_magic(user_id):
+def get_data(user_id):
     """
     Quick and dirty function that gets at most 200 of each 
 
