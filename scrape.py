@@ -178,7 +178,7 @@ def process_photo(item):
     max_photo_width = 0
 
     for photo in item['sizes']:
-        if photo['width'] > max_photo_width:
+        if photo['width'] >= max_photo_width:
             max_photo_width = photo['width']
             max_photo = photo
 
