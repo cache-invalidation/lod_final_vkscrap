@@ -74,7 +74,10 @@ def get_mentions(user_id, max_mentions, offset=0):
     """
 
     answer = vk.newsfeed.getMentions(owner_id=user_id, count=20)
-    max_mentions = min(max_mentions, answer['count'])
+    max_mentions = min(max_mentions, answer['count'] - offset)
+    if max_mentions <= 0:
+        return []
+
     n_iters = (max_mentions + 49) // 50
 
     result = list()
@@ -142,7 +145,10 @@ def get_posts(owner_id, max_posts, offset=0):
     """
 
     answer = vk.wall.get(owner_id=owner_id, filter='owner')
-    max_posts = min(answer['count'], max_posts)
+    max_posts = min(answer['count'] - offset, max_posts)
+    if max_posts <= 0:
+        return []
+
     n_iters = (max_posts + 99) // 100
 
     result = list()
@@ -176,6 +182,7 @@ def process_photo(item):
             max_photo_width = photo['width']
             max_photo = photo
 
+
     result['link'] = max_photo['url']
 
     return result
@@ -204,7 +211,11 @@ def get_photos(owner_id, max_photos, offset=0):
         'date' -- date of publication in Unixcode format
     """
     answer = vk.photos.getAll(owner_id=owner_id)
-    max_photos = min(max_photos, answer['count'])
+    max_photos = min(max_photos, answer['count'] - offset)
+
+    if max_photos <= 0:
+        return []
+
     n_iters = (max_photos + 199) // 200
 
     result = list()
