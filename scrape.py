@@ -48,7 +48,7 @@ def process_mention(item):
     return result
 
 
-def get_mentions(user_id, max_mentions):
+def get_mentions(user_id, max_mentions, offset=0):
     """
     Find mentions of specific user
 
@@ -59,6 +59,9 @@ def get_mentions(user_id, max_mentions):
 
     max_mentions: int
         Maximum amount of posts to scrape
+
+    offset: int
+        Offset to start loading
 
     Returns:
     --------
@@ -80,7 +83,7 @@ def get_mentions(user_id, max_mentions):
     for i in range(n_iters):
         count = cur_count = min(50, max_mentions - 50 * i)
         answer = vk.newsfeed.getMentions(
-            owner_id=user_id, count=50, offset=i * 50)
+            owner_id=user_id, count=50, offset=i * 50 + offset)
 
         answer = map(process_mention, answer['items'])
         answer = filter(lambda x: x is not None, answer)
@@ -114,7 +117,7 @@ def process_post(item):
     return result
 
 
-def get_posts(owner_id, max_posts):
+def get_posts(owner_id, max_posts, offset=0):
     """
     Get list of user's posts
 
@@ -125,6 +128,9 @@ def get_posts(owner_id, max_posts):
 
     max_posts: int
         Maximal number of posts to scrape
+
+    offset: int
+        Offset to start loading
 
     Returns:
     --------
@@ -144,7 +150,7 @@ def get_posts(owner_id, max_posts):
     for i in range(n_iters):
         cur_count = min(100, max_posts - 100 * i)
         answer = vk.wall.get(owner_id=owner_id, count=cur_count,
-                             offset=100*i, filter='owner')
+                             offset=100*i+offset, filter='owner')
         answer = answer['items']
         answer = map(process_post, answer)
         result += list(answer)
@@ -175,7 +181,7 @@ def process_photo(item):
     return result
 
 
-def get_photos(owner_id, max_photos):
+def get_photos(owner_id, max_photos, offset=0):
     """
     Pull links to photos posted by user
 
@@ -186,6 +192,9 @@ def get_photos(owner_id, max_photos):
 
     max_photos: int
         Maximal number of images to pull links for
+
+    offset: int
+        Offset to start loading
 
     Returns:
     --------
@@ -203,14 +212,14 @@ def get_photos(owner_id, max_photos):
     for i in range(n_iters):
         cur_count = min(200, max_photos - 200 * i)
         answer = vk.photos.getAll(
-            owner_id=owner_id, count=cur_count, offset=200 * i)
+            owner_id=owner_id, count=cur_count, offset=200 * i + offset)
         answer = map(process_photo, answer['items'])
         result += list(answer)
 
     return result
 
 
-def get_data(user_id):
+def get_data(user_id, batch_size=50, offset=0):
     """
     Quick and dirty function that gets at most 200 of each 
 
@@ -219,6 +228,9 @@ def get_data(user_id):
     user_id: int
         VK ID of user to pull data for
 
+    offset: int
+        Offset to start loading data from
+
     Returns:
     --------
         dict with results
@@ -226,8 +238,8 @@ def get_data(user_id):
             'posts' -- array of dicts describing posts
             'mentions' -- array of dicts describing mentions by other users
     """
-    photos = get_photos(user_id, 50)
-    posts = get_posts(user_id, 50)
-    mentions = get_mentions(user_id, 50)
+    photos = get_photos(user_id, batch_size, offset)
+    posts = get_posts(user_id, batch_size, offset)
+    mentions = get_mentions(user_id, batch_size, offset)
 
     return {'photos': photos, 'posts': posts, 'mentions': mentions}
